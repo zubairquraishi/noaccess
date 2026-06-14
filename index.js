@@ -109,7 +109,7 @@ exports.toSqlite = function(outputPath) {
             case 2:  return 'INTEGER'; // Integer, 8 bit
             case 3:  return 'INTEGER'; // Integer, 16 bit
             case 4:  return 'INTEGER'; // Integer, 32 bit
-            case 5:  return 'REAL';    // Fixed Point (Money)
+            case 5:  return 'NUMERIC'; // Fixed Point, 64 bit (Money/Currency — scaled integer)
             case 6:  return 'REAL';    // Float, 32 bit
             case 7:  return 'REAL';    // Float, 64 bit
             case 8:  return 'REAL';    // Date/Time (stored as double)
@@ -118,7 +118,7 @@ exports.toSqlite = function(outputPath) {
             case 11: return 'BLOB';    // OLE
             case 12: return 'TEXT';    // Memo
             case 15: return 'TEXT';    // GUID
-            case 16: return 'REAL';    // Fixed Point, 96 bit
+            case 16: return 'NUMERIC'; // Fixed Point, 96 bit (Decimal — exact numeric)
             case 18: return 'INTEGER'; // Complex field key
             default: return 'TEXT';
         }
