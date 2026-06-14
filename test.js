@@ -17,9 +17,9 @@ console.log("Table pages: " + JSON.stringify(tablePages,null,2))
 
 console.log(JSON.stringify(ret,null,2))
 
-let cols = noaccess.getColumns("Contact")
-console.log(JSON.stringify(cols,null,2))
+//let cols = noaccess.getColumns("Contact")
+//console.log(JSON.stringify(cols,null,2))
 
 
-let tableData = noaccess.getTableData("Contact")
-console.log(JSON.stringify(tableData,null,2))
+//let tableData = noaccess.getTableData("Contact")
+//console.log(JSON.stringify(tableData,null,2))
