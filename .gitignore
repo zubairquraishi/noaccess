@@ -5,3 +5,4 @@ node_modules
 .DS_store
 package-lock.json
 package-lock.json
+output.db

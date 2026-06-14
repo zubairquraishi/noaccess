@@ -131,6 +131,10 @@ exports.toSqlite = function(outputPath) {
         for (const tableName of tables) {
             const pageNum = tablesToPageNums[tableName];
 
+            if (!wholeDb.table_pages[pageNum]) {
+                continue; // no data pages found for this table, skip it
+            }
+
             if (!wholeDb.table_pages[pageNum].col_defns) {
                 getTableDefinitionForPage(pageNum);
             }

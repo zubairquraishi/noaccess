@@ -23,3 +23,6 @@ console.log(JSON.stringify(ret,null,2))
 
 //let tableData = noaccess.getTableData("Contact")
 //console.log(JSON.stringify(tableData,null,2))
+
+//noaccess.load({ fileName: 'mydb.mdb' });
+noaccess.toSqlite('output.db');
