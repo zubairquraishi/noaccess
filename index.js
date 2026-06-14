@@ -135,11 +135,12 @@ exports.toSqlite = function(outputPath) {
                 continue; // no data pages found for this table, skip it
             }
 
-            if (!wholeDb.table_pages[pageNum].col_defns) {
-                getTableDefinitionForPage(pageNum);
-            }
+            // Load data first — this also ensures col_defns is fully populated
+            // (getTableData internally calls getTableDefinitionForPage, so we must
+            // read columnNames AFTER that call to avoid a stale snapshot mismatch)
+            const data = this.getTableData(tableName);
 
-            const colDefs    = wholeDb.table_pages[pageNum].col_defns;
+            const colDefs     = wholeDb.table_pages[pageNum].col_defns;
             const columnNames = Object.keys(wholeDb.table_pages[pageNum].columnNames);
 
             // Build CREATE TABLE
@@ -149,15 +150,14 @@ exports.toSqlite = function(outputPath) {
                 return `"${name.replace(/"/g, '""')}" ${sqliteType}`;
             }).join(', ');
 
-            db.exec(`CREATE TABLE IF NOT EXISTS "${tableName.replace(/"/g, '""')}" (${colsSql})`);
-
-            // Insert rows
-            const data = this.getTableData(tableName);
+            const safeName = tableName.replace(/"/g, '""');
+            db.exec(`DROP TABLE IF EXISTS "${safeName}"`);
+            db.exec(`CREATE TABLE "${safeName}" (${colsSql})`);
             if (data.length > 0) {
                 const placeholders = columnNames.map(() => '?').join(', ');
                 const quotedCols   = columnNames.map(n => `"${n.replace(/"/g, '""')}"`).join(', ');
                 const stmt = db.prepare(
-                    `INSERT INTO "${tableName.replace(/"/g, '""')}" (${quotedCols}) VALUES (${placeholders})`
+                    `INSERT INTO "${safeName}" (${quotedCols}) VALUES (${placeholders})`
                 );
 
                 for (const row of data) {
@@ -1034,6 +1034,10 @@ function populateDataForTableDefinedOnPage(  pageNum  ) {
                         //
                         let fieldDefnIndex = notNullVarListFieldOffset[varIndex]
                         let fieldDefn = wholeDb.table_pages[pageNum].col_defns[fieldDefnIndex]
+                        if (!fieldDefn) {
+                            // column definition not found for this variable-length field; skip it
+                            continue
+                        }
                         //if wholeDb.table_pages[pageNum].col_defns[varIndex].UnicodeFlag
                         if (fieldDefn.UnicodeFlag == "1") {
                             let VariableLengthFieldOffset = getVar({length: listOfOffsets[varIndex].length  ,
