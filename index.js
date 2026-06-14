@@ -92,6 +92,94 @@ exports.getWholeDb = function() {
 
 
 
+// -----------------------------------------------------------------------
+//                       toSqlite(  OUTPUT FILE PATH  )
+//
+//   Exports all tables and data from the loaded Access database into
+//   a new SQLite database file at the given path.
+//
+// -----------------------------------------------------------------------
+exports.toSqlite = function(outputPath) {
+    const Database = require('better-sqlite3');
+    const db = new Database(outputPath);
+
+    function accessTypeToSqlite(colType) {
+        switch (colType) {
+            case 1:  return 'INTEGER'; // Boolean
+            case 2:  return 'INTEGER'; // Integer, 8 bit
+            case 3:  return 'INTEGER'; // Integer, 16 bit
+            case 4:  return 'INTEGER'; // Integer, 32 bit
+            case 5:  return 'REAL';    // Fixed Point (Money)
+            case 6:  return 'REAL';    // Float, 32 bit
+            case 7:  return 'REAL';    // Float, 64 bit
+            case 8:  return 'REAL';    // Date/Time (stored as double)
+            case 9:  return 'BLOB';    // Binary
+            case 10: return 'TEXT';    // Text
+            case 11: return 'BLOB';    // OLE
+            case 12: return 'TEXT';    // Memo
+            case 15: return 'TEXT';    // GUID
+            case 16: return 'REAL';    // Fixed Point, 96 bit
+            case 18: return 'INTEGER'; // Complex field key
+            default: return 'TEXT';
+        }
+    }
+
+    const tables = this.getTables();
+
+    db.exec('BEGIN');
+    try {
+        for (const tableName of tables) {
+            const pageNum = tablesToPageNums[tableName];
+
+            if (!wholeDb.table_pages[pageNum].col_defns) {
+                getTableDefinitionForPage(pageNum);
+            }
+
+            const colDefs    = wholeDb.table_pages[pageNum].col_defns;
+            const columnNames = Object.keys(wholeDb.table_pages[pageNum].columnNames);
+
+            // Build CREATE TABLE
+            const colsSql = columnNames.map(name => {
+                const colIdx = wholeDb.table_pages[pageNum].columnNames[name];
+                const sqliteType = accessTypeToSqlite(colDefs[colIdx].colType);
+                return `"${name.replace(/"/g, '""')}" ${sqliteType}`;
+            }).join(', ');
+
+            db.exec(`CREATE TABLE IF NOT EXISTS "${tableName.replace(/"/g, '""')}" (${colsSql})`);
+
+            // Insert rows
+            const data = this.getTableData(tableName);
+            if (data.length > 0) {
+                const placeholders = columnNames.map(() => '?').join(', ');
+                const quotedCols   = columnNames.map(n => `"${n.replace(/"/g, '""')}"`).join(', ');
+                const stmt = db.prepare(
+                    `INSERT INTO "${tableName.replace(/"/g, '""')}" (${quotedCols}) VALUES (${placeholders})`
+                );
+
+                for (const row of data) {
+                    const values = columnNames.map(name => {
+                        const val = row[name];
+                        if (val === undefined || val === null) return null;
+                        // Values from getTableDataForPage are already numbers or strings
+                        return val;
+                    });
+                    stmt.run(values);
+                }
+            }
+        }
+        db.exec('COMMIT');
+    } catch (err) {
+        db.exec('ROLLBACK');
+        db.close();
+        throw err;
+    }
+
+    db.close();
+    return { success: true, path: outputPath, tables: tables.length };
+}
+
+
+
 
 
 exports.getTablePages = function(colName) {
