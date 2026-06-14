@@ -1,7 +1,7 @@
 {
   "name": "@yazz/noaccess",
   "version": "2.0.0",
-  "description": "",
+  "description": "Import MSAccess MDB or ACCDB files into NodeJS",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,9 +13,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yazz/noaccess.git"
+    "url": "git+https://github.com/zubairquraishi/noaccess.git"
   },
   "dependencies": {
     "table": "^5.4.6"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/zubairquraishi/noaccess/issues"
+  },
+  "homepage": "https://github.com/zubairquraishi/noaccess#readme"
 }
